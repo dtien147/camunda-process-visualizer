@@ -35,31 +35,31 @@ This project is a web application that visualizes process instances and activiti
 ## Setup
 
 ### 1. Clone the Repository
-'''bash
+```bash
 git clone https://github.com/your-repository/camunda-activity-tracker.git
 cd camunda-activity-tracker
-'''
+```
 
 ### 2. Install Dependencies
-'''bash
+```bash
 npm install
-'''
+```
 
 ### 3. Configure Environment Variables
 Create a `.env` file in the root directory and add your database credentials:
 
-'''makefile
+```makefile
 DB_HOST=localhost
 DB_NAME=camunda
 DB_USER=camunda
 DB_PASS=your_password
 DB_PORT=5432
-'''
+```
 
 ### 4. Run the Application
-'''bash
+```bash
 npm start
-'''
+```
 
 The application will run at `http://localhost:3000`.
 
@@ -72,7 +72,7 @@ The application will run at `http://localhost:3000`.
 | GET    | `/api/process-instance/:id/activities` | Fetches activities and variables for a process instance. |
 
 ### Response Example
-'''json
+```json
 {
   "processInstance": {
     "id": "123456789",
@@ -95,7 +95,7 @@ The application will run at `http://localhost:3000`.
   ],
   "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>..."
 }
-'''
+```
 
 ## Usage
 
