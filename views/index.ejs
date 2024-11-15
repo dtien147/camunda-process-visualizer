@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BPMN Process Viewer</title>
+  <script src="bpmn-viewer.development.js"></script>
+  <style>
+    #canvas {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #ccc;
+    }
+
+    .highlight {
+      stroke: green !important;
+    }
+
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4); /* Black background with opacity */
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 50%;
+      border-radius: 8px;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+    }
+    .clickable {
+        cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>BPMN Process Viewer</h1>
+  <select id="processSelector">
+    <option value="">Select a Process Instance</option>
+    <% instances.forEach(instance => { %>
+      <option value="<%= instance.processInstanceId %>">
+        Instance ID: <%= instance.processInstanceId %> (<%= instance.startTime %>)
+      </option>
+    <% }) %>
+  </select>
+  <div id="jsonModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Variables</h2>
+      <pre id="jsonData"></pre>
+    </div>
+  </div>
+  <div id="canvas"></div>
+
+  <script>
+    const viewer = new BpmnJS({ container: '#canvas' });
+
+    let data;
+
+    async function loadProcessInstance(processInstanceId) {
+      if (!processInstanceId) return;
+
+      try {
+        const response = await fetch(`/api/process-instance/${processInstanceId}/activities`);
+        data = await response.json();
+
+        // Import BPMN diagram
+        viewer.importXML(data.bpmnXml).then(() => {
+            const canvas = viewer.get('canvas');
+            const svg = canvas._svg;
+
+          // Highlight activities
+          data.activities.forEach(activity => {
+            let element;
+            if (activity.id.startsWith("Activity")) {
+                element = svg.querySelector(`[data-element-id="${activity.id}"] text`);
+            }
+            
+            if (activity.id.startsWith("Gateway")) {
+                element = svg.querySelector(`[data-element-id="${activity.id}"] path`);
+            }
+
+            if (activity.id.startsWith("Event")) {
+                element = svg.querySelector(`[data-element-id="${activity.id}"] circle`);
+            }
+
+            if (element) {
+                element.classList.add('highlight');
+                    // Show modal with JSON data on button click
+                    element.addEventListener("click", () => {
+                    modalContent.textContent = JSON.stringify(activity.variables, null, 2); // Pretty-print JSON
+                    modal.style.display = "block"; // Show modal
+                });
+                element.classList.add('clickable');
+            }
+
+            // canvas.addMarker(element, 'highlight'); // Add marker to highlight activity
+          });
+
+          console.log('Process instance loaded successfully.');
+        }).catch(err => {
+          if (err) {
+            console.error('Error importing BPMN XML:', err);
+            return;
+          }
+
+          
+        });
+      } catch (error) {
+        console.error('Error loading process instance:', error);
+      }
+    }
+
+    // Example process instance selection logic
+    document.getElementById('processSelector').addEventListener('change', function () {
+      const processInstanceId = this.value;
+      loadProcessInstance(processInstanceId);
+    });
+
+    // Open modal
+    const modal = document.getElementById("jsonModal");
+    const modalContent = document.getElementById("jsonData");
+    const closeModalButton = document.querySelector(".close");
+
+    
+
+    // Close modal on close button click
+    closeModalButton.addEventListener("click", () => {
+      modal.style.display = "none"; // Hide modal
+    });
+  </script>
+</body>
+</html>
